@@ -2,30 +2,6 @@ import os
 import pandas as pd
 import plotly.graph_objects as go
 
-'''
-Bollinger Bands:
-
-  upper band is 2 std dev above the sma, middle band is the sma, lower band is 2 std dev below sma
-  default sma calculation is the 20 day moving average
-
-  Method 1
-    When we exceed upper band, expect a reversal to sma/middle band, sellpoint / short
-    When we go under lower band, expect reversal back upward, buypoint / long
-  
-  Method 2
-    When we exceed upper band, we ride the strong momentum and we ride along the top of upper BB
-
-Keltner's Channels:
-
-  Instead of bands tracking the stddev's from the sma, we'll have them be a multiple of the average
-  true range (ATR) above/below the middle line/channel, which we'll use the 20 day sma for (though
-  the official definition uses the 20 day Exponential MA)
-
-When Bollinger Bands are within Keltner Channels (squeezed), low volatility is indicated. We then are 
-looking for a breakout
-
-'''
-
 for filename in os.listdir('datasets'):
   symbol = filename.split(".")[0] # remove .csv
   df = pd.read_csv(f'datasets/{filename}')
@@ -52,22 +28,27 @@ for filename in os.listdir('datasets'):
   def in_squeeze(df):
     return df['lower_bollinger'] > df['lower_keltner'] and df['upper_bollinger'] < df['upper_keltner']
 
+  # function to graph candlesticks, bollinger bands, keltneer channels
+  def graph(df):
+    candlestick = go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'])
+    upper_band = go.Scatter(x=df['Date'], y=df['upper_bollinger'], name='Upper Bollinger Band', line={'color': 'blue'})
+    lower_band = go.Scatter(x=df['Date'], y=df['lower_bollinger'], name='Lower Bollinger Band', line={'color': 'blue'})
+    upper_kc = go.Scatter(x=df['Date'], y=df['upper_keltner'], name='Upper Keltner Channel', line={'color': 'orange'})
+    lower_kc = go.Scatter(x=df['Date'], y=df['lower_keltner'], name='Lower Keltner Channel', line={'color': 'orange'})
+
+    fig = go.Figure(data=[candlestick, upper_band, lower_band, upper_kc, lower_kc])
+    fig.layout.xaxis.type = 'category' # gets rid of weekend spaces with no data
+    fig.layout.xaxis.rangeslider.visible = False
+    fig.show()
+
   # applies function to dataframe 
   df['squeeze_on'] = df.apply(in_squeeze, axis=1)
+
   # check if we're in a squeeze in the last row of the df
   if df.iloc[-1]['squeeze_on']:
     print(f'{symbol} is in the squeeze')
+    graph(df)
   elif df.iloc[-3]['squeeze_on'] and not df.iloc[-1]['squeeze_on']:
-    print(f'{symbol} was in the squeeze 3 days ago and has broke out')
-
-  # candlestick = go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'])
-  # upper_band = go.Scatter(x=df['Date'], y=df['upperband'], name='Upper Bollinger Band', line={'color': 'blue'})
-  # lower_band = go.Scatter(x=df['Date'], y=df['lowerband'], name='Lower Bollinger Band', line={'color': 'blue'})
-  # upper_kc = go.Scatter(x=df['Date'], y=df['upper_keltner'], name='Upper Keltner Channel', line={'color': 'orange'})
-  # lower_kc = go.Scatter(x=df['Date'], y=df['lower_keltner'], name='Lower Keltner Channel', line={'color': 'orange'})
-
-  # fig = go.Figure(data=[candlestick, upper_band, lower_band, upper_kc, lower_kc])
-  # fig.layout.xaxis.type = 'category' # gets rid of weekend spaces with no data
-  # fig.layout.xaxis.rangeslider.visible = False
-
-  # fig.show()
+    print(f'{symbol} is coming out of the squeeze')
+    graph(df)
+  
