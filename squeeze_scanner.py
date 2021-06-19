@@ -39,14 +39,26 @@ for filename in os.listdir('datasets'):
   # stddev found through rolling calc + std() from pd
   df['stddev'] = df['Close'].rolling(window=20).std()
   # define upper & lower bollinger bands (multipliers can be variable)
-  df['lower_band'] = df['20sma'] - (2 * df['stddev'])
-  df['upper_band'] = df['20sma'] + (2 * df['stddev'])
+  df['lower_bollinger'] = df['20sma'] - (2 * df['stddev'])
+  df['upper_bollinger'] = df['20sma'] + (2 * df['stddev'])
   # define true range and average true range
   df['TR'] = abs(df['High'] - df['Low'])
   df['ATR'] = df['TR'].rolling(window=20).mean()
   # define upper & lower keltner channels (multipliers can be variable)
   df['lower_keltner'] = df['20sma'] - (1.5 * df['ATR'])
   df['upper_keltner'] = df['20sma'] + (1.5 * df['ATR'])
+
+  # determine if a stock is in a squeeze (based on data timeframe)
+  def in_squeeze(df):
+    return df['lower_bollinger'] > df['lower_keltner'] and df['upper_bollinger'] < df['upper_keltner']
+
+  # applies function to dataframe 
+  df['squeeze_on'] = df.apply(in_squeeze, axis=1)
+  # check if we're in a squeeze in the last row of the df
+  if df.iloc[-1]['squeeze_on']:
+    print(f'{symbol} is in the squeeze')
+  elif df.iloc[-3]['squeeze_on'] and not df.iloc[-1]['squeeze_on']:
+    print(f'{symbol} was in the squeeze 3 days ago and has broke out')
 
   # candlestick = go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'])
   # upper_band = go.Scatter(x=df['Date'], y=df['upperband'], name='Upper Bollinger Band', line={'color': 'blue'})
@@ -59,4 +71,3 @@ for filename in os.listdir('datasets'):
   # fig.layout.xaxis.rangeslider.visible = False
 
   # fig.show()
-  break
