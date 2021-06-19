@@ -17,6 +17,12 @@ Bollinger Bands:
 
 Keltner's Channels:
 
+  Instead of bands tracking the stddev's from the sma, we'll have them be a multiple of the average
+  true range (ATR) above/below the middle line/channel, which we'll use the 20 day sma for (though
+  the official definition uses the 20 day Exponential MA)
+
+When Bollinger Bands are within Keltner Channels (squeezed), low volatility is indicated. We then are 
+looking for a breakout
 
 '''
 
@@ -32,17 +38,25 @@ for filename in os.listdir('datasets'):
   df['20sma'] = df['Close'].rolling(window=20).mean()
   # stddev found through rolling calc + std() from pd
   df['stddev'] = df['Close'].rolling(window=20).std()
-  # define upper & lower bands
-  df['lowerband'] = df['20sma'] - (2 * df['stddev'])
-  df['upperband'] = df['20sma'] + (2 * df['stddev'])
-  
-  candlestick = go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'])
-  upper_band = go.Scatter(x=df['Date'], y=df['upperband'], name='Upper Bollinger Band', line={'color': 'blue'})
-  lower_band = go.Scatter(x=df['Date'], y=df['lowerband'], name='Lower Bollinger Band', line={'color': 'blue'})
-  
-  fig = go.Figure(data=[candlestick, upper_band, lower_band])
-  fig.layout.xaxis.type = 'category' # gets rid of weekend spaces with no data
-  fig.layout.xaxis.rangeslider.visible = False
+  # define upper & lower bollinger bands (multipliers can be variable)
+  df['lower_band'] = df['20sma'] - (2 * df['stddev'])
+  df['upper_band'] = df['20sma'] + (2 * df['stddev'])
+  # define true range and average true range
+  df['TR'] = abs(df['High'] - df['Low'])
+  df['ATR'] = df['TR'].rolling(window=20).mean()
+  # define upper & lower keltner channels (multipliers can be variable)
+  df['lower_keltner'] = df['20sma'] - (1.5 * df['ATR'])
+  df['upper_keltner'] = df['20sma'] + (1.5 * df['ATR'])
 
-  fig.show()
+  # candlestick = go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'])
+  # upper_band = go.Scatter(x=df['Date'], y=df['upperband'], name='Upper Bollinger Band', line={'color': 'blue'})
+  # lower_band = go.Scatter(x=df['Date'], y=df['lowerband'], name='Lower Bollinger Band', line={'color': 'blue'})
+  # upper_kc = go.Scatter(x=df['Date'], y=df['upper_keltner'], name='Upper Keltner Channel', line={'color': 'orange'})
+  # lower_kc = go.Scatter(x=df['Date'], y=df['lower_keltner'], name='Lower Keltner Channel', line={'color': 'orange'})
+
+  # fig = go.Figure(data=[candlestick, upper_band, lower_band, upper_kc, lower_kc])
+  # fig.layout.xaxis.type = 'category' # gets rid of weekend spaces with no data
+  # fig.layout.xaxis.rangeslider.visible = False
+
+  # fig.show()
   break
