@@ -35,15 +35,14 @@ for filename in os.listdir('datasets'):
   # define upper & lower bands
   df['lowerband'] = df['20sma'] - (2 * df['stddev'])
   df['upperband'] = df['20sma'] + (2 * df['stddev'])
-  print(symbol)
-  fig = go.Figure(data=[
-      go.Candlestick(
-        x=df['Date'],
-        open=df['Open'],
-        high=df['High'],
-        low=df['Low'],
-        close=df['Close'])
-  ])
+  
+  candlestick = go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'])
+  upper_band = go.Scatter(x=df['Date'], y=df['upperband'], name='Upper Bollinger Band', line={'color': 'blue'})
+  lower_band = go.Scatter(x=df['Date'], y=df['lowerband'], name='Lower Bollinger Band', line={'color': 'blue'})
+  
+  fig = go.Figure(data=[candlestick, upper_band, lower_band])
+  fig.layout.xaxis.type = 'category' # gets rid of weekend spaces with no data
+  fig.layout.xaxis.rangeslider.visible = False
 
   fig.show()
   break
