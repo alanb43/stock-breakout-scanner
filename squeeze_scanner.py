@@ -37,6 +37,7 @@ for filename in os.listdir('datasets'):
     lower_kc = go.Scatter(x=df['Date'], y=df['lower_keltner'], name='Lower Keltner Channel', line={'color': 'orange'})
 
     fig = go.Figure(data=[candlestick, upper_band, lower_band, upper_kc, lower_kc])
+    fig.layout.title = f"{symbol}"
     fig.layout.xaxis.type = 'category' # gets rid of weekend spaces with no data
     fig.layout.xaxis.rangeslider.visible = False
     fig.show()
